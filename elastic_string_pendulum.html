@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elastic Pendulum Physics Simulator</title>
+    <style>
+        :root {
+            --primary-color: #5D5CDE;
+            --secondary-color: #DE5C5C;
+            --text-light: #333333;
+            --text-dark: #EEEEEE;
+            --bg-light: #FFFFFF;
+            --bg-dark: #181818;
+            --secondary-light: #F0F0F0;
+            --secondary-dark: #2A2A2A;
+            --x-color: #4CAF50;
+            --y-color: #FF9800;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            body {
+                background-color: var(--bg-dark);
+                color: var(--text-dark);
+            }
+            canvas {
+                background-color: var(--secondary-dark);
+            }
+            .slider-container {
+                background-color: var(--secondary-dark);
+            }
+            input[type="range"] {
+                background-color: #333;
+            }
+            input[type="range"]::-webkit-slider-thumb {
+                background: var(--primary-color);
+            }
+            input[type="range"]::-moz-range-thumb {
+                background: var(--primary-color);
+            }
+            .value-display {
+                color: var(--text-dark);
+            }
+            .controls button {
+                background-color: var(--primary-color);
+                color: var(--text-dark);
+            }
+            .panel-title {
+                color: var(--text-dark);
+            }
+            .graph-legend {
+                color: var(--text-dark);
+            }
+        }
+
+        @media (prefers-color-scheme: light) {
+            body {
+                background-color: var(--bg-light);
+                color: var(--text-light);
+            }
+            canvas {
+                background-color: var(--secondary-light);
+            }
+            .slider-container {
+                background-color: var(--secondary-light);
+            }
+            input[type="range"] {
+                background-color: #DDD;
+            }
+            input[type="range"]::-webkit-slider-thumb {
+                background: var(--primary-color);
+            }
+            input[type="range"]::-moz-range-thumb {
+                background: var(--primary-color);
+            }
+            .value-display {
+                color: var(--text-light);
+            }
+            .controls button {
+                background-color: var(--primary-color);
+                color: white;
+            }
+            .panel-title {
+                color: var(--text-light);
+            }
+            .graph-legend {
+                color: var(--text-light);
+            }
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .simulation-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        @media (min-width: 768px) {
+            .simulation-container {
+                flex-direction: row;
+            }
+        }
+
+        .canvas-container {
+            flex: 1;
+            min-width: 0;
+        }
+
+        canvas {
+            width: 100%;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+
+        .controls-container {
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .panel-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .slider-container {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .slider-group {
+            margin-bottom: 15px;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .value-display {
+            font-weight: 600;
+            min-width: 80px;
+            text-align: right;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            appearance: none;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .controls button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: opacity 0.2s;
+            font-size: 16px;
+        }
+
+        .controls button:hover {
+            opacity: 0.9;
+        }
+
+        .instructions {
+            margin-top: 10px;
+            font-style: italic;
+            font-size: 0.9rem;
+            text-align: center;
+        }
+
+        .graph-container {
+            margin-bottom: 25px;
+        }
+
+        .graph-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+
+        .graph-legend {
+            display: flex;
+            gap: 15px;
+            font-size: 0.9rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .legend-color {
+            width: 15px;
+            height: 15px;
+            border-radius: 3px;
+        }
+
+        .x-component {
+            background-color: var(--x-color);
+        }
+
+        .y-component {
+            background-color: var(--y-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 style="text-align: center; margin-bottom: 20px;">Elastic Pendulum Simulator</h1>
+        
+        <div class="simulation-container">
+            <div class="canvas-container">
+                <div class="panel-title">Pendulum Simulation</div>
+                <canvas id="simulationCanvas" height="400"></canvas>
+                <p class="instructions">Drag the pendulum to set initial position, then release to start simulation.</p>
+            </div>
+            
+            <div class="controls-container">
+                <div class="slider-container">
+                    <div class="panel-title">Parameters</div>
+                    
+                    <div class="slider-group">
+                        <div class="slider-label">
+                            <span>Mass (kg)</span>
+                            <span class="value-display" id="massValue">1.0</span>
+                        </div>
+                        <input type="range" id="massSlider" min="0.1" max="5" step="0.1" value="1.0">
+                    </div>
+                    
+                    <div class="slider-group">
+                        <div class="slider-label">
+                            <span>Spring Constant (N/m)</span>
+                            <span class="value-display" id="springValue">50</span>
+                        </div>
+                        <input type="range" id="springSlider" min="10" max="200" step="5" value="50">
+                    </div>
+                    
+                    <div class="slider-group">
+                        <div class="slider-label">
+                            <span>Rest Length (m)</span>
+                            <span class="value-display" id="lengthValue">1.0</span>
+                        </div>
+                        <input type="range" id="lengthSlider" min="0.2" max="2" step="0.1" value="1.0">
+                    </div>
+                    
+                    <div class="slider-group">
+                        <div class="slider-label">
+                            <span>Gravity (m/s²)</span>
+                            <span class="value-display" id="gravityValue">9.8</span>
+                        </div>
+                        <input type="range" id="gravitySlider" min="0" max="20" step="0.1" value="9.8">
+                    </div>
+                    
+                    <div class="controls">
+                        <button id="resetBtn">Reset</button>
+                        <button id="pauseBtn">Pause</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Displacement-Time Graph -->
+        <div class="graph-container">
+            <div class="graph-header">
+                <div class="panel-title">Displacement-Time Graph</div>
+                <div class="graph-legend">
+                    <div class="legend-item">
+                        <div class="legend-color x-component"></div>
+                        <span>X-axis (m)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color y-component"></div>
+                        <span>Y-axis (m)</span>
+                    </div>
+                </div>
+            </div>
+            <canvas id="displacementCanvas" height="180"></canvas>
+        </div>
+        
+        <!-- Velocity-Time Graph -->
+        <div class="graph-container">
+            <div class="graph-header">
+                <div class="panel-title">Velocity-Time Graph</div>
+                <div class="graph-legend">
+                    <div class="legend-item">
+                        <div class="legend-color x-component"></div>
+                        <span>X-axis (m/s)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color y-component"></div>
+                        <span>Y-axis (m/s)</span>
+                    </div>
+                </div>
+            </div>
+            <canvas id="velocityCanvas" height="180"></canvas>
+        </div>
+        
+        <!-- Acceleration-Time Graph -->
+        <div class="graph-container">
+            <div class="graph-header">
+                <div class="panel-title">Acceleration-Time Graph</div>
+                <div class="graph-legend">
+                    <div class="legend-item">
+                        <div class="legend-color x-component"></div>
+                        <span>X-axis (m/s²)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color y-component"></div>
+                        <span>Y-axis (m/s²)</span>
+                    </div>
+                </div>
+            </div>
+            <canvas id="accelerationCanvas" height="180"></canvas>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const simulationCanvas = document.getElementById('simulationCanvas');
+        const displacementCanvas = document.getElementById('displacementCanvas');
+        const velocityCanvas = document.getElementById('velocityCanvas');
+        const accelerationCanvas = document.getElementById('accelerationCanvas');
+        
+        const simulationCtx = simulationCanvas.getContext('2d');
+        const displacementCtx = displacementCanvas.getContext('2d');
+        const velocityCtx = velocityCanvas.getContext('2d');
+        const accelerationCtx = accelerationCanvas.getContext('2d');
+        
+        // Sliders
+        const massSlider = document.getElementById('massSlider');
+        const springSlider = document.getElementById('springSlider');
+        const lengthSlider = document.getElementById('lengthSlider');
+        const gravitySlider = document.getElementById('gravitySlider');
+        
+        // Value displays
+        const massValue = document.getElementById('massValue');
+        const springValue = document.getElementById('springValue');
+        const lengthValue = document.getElementById('lengthValue');
+        const gravityValue = document.getElementById('gravityValue');
+        
+        // Buttons
+        const resetBtn = document.getElementById('resetBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        
+        // Simulation parameters
+        let params = {
+            mass: 1.0,       // kg
+            springK: 50,     // N/m
+            restLength: 1.0, // m
+            gravity: 9.8,    // m/s²
+            
+            // Pivot position (in canvas coordinates)
+            pivotX: 0,
+            pivotY: 0,
+            
+            // Pendulum state
+            pendulumX: 0,
+            pendulumY: 0,
+            velocityX: 0,
+            velocityY: 0,
+            accelerationX: 0,
+            accelerationY: 0,
+            
+            // Simulation state
+            paused: true,
+            dragging: false,
+            
+            // Scaling for visualization
+            pixelsPerMeter: 100, // Pixels per meter for display
+            
+            // For history graphs
+            timeElapsed: 0,
+            timeHistory: [],
+            
+            // Position history (in meters, relative to pivot)
+            positionXHistory: [],
+            positionYHistory: [],
+            
+            // Velocity history (in m/s)
+            velocityXHistory: [],
+            velocityYHistory: [],
+            
+            // Acceleration history (in m/s²)
+            accelerationXHistory: [],
+            accelerationYHistory: [],
+            
+            maxTime: 10, // seconds to display in the graph
+            timeStep: 1/60, // simulation time step in seconds
+        };
+        
+        // Set canvas sizes
+        function resizeCanvases() {
+            simulationCanvas.width = simulationCanvas.offsetWidth;
+            simulationCanvas.height = Math.min(simulationCanvas.offsetWidth, 400);
+            
+            displacementCanvas.width = displacementCanvas.offsetWidth;
+            displacementCanvas.height = 180;
+            
+            velocityCanvas.width = velocityCanvas.offsetWidth;
+            velocityCanvas.height = 180;
+            
+            accelerationCanvas.width = accelerationCanvas.offsetWidth;
+            accelerationCanvas.height = 180;
+            
+            // Re-render the canvases after initialization
+            if (typeof drawSimulation === 'function' && 
+                typeof drawDisplacementGraph === 'function' && 
+                typeof drawVelocityGraph === 'function' && 
+                typeof drawAccelerationGraph === 'function') {
+                drawSimulation();
+                drawDisplacementGraph();
+                drawVelocityGraph();
+                drawAccelerationGraph();
+            }
+        }
+        
+        // Initialize position
+        function initializePosition() {
+            params.pivotX = simulationCanvas.width / 2;
+            params.pivotY = simulationCanvas.height / 3;
+            params.pendulumX = params.pivotX;
+            params.pendulumY = params.pivotY + params.restLength * params.pixelsPerMeter;
+            
+            // Reset dynamics
+            params.velocityX = 0;
+            params.velocityY = 0;
+            params.accelerationX = 0;
+            params.accelerationY = 0;
+            
+            // Reset history
+            params.timeElapsed = 0;
+            params.timeHistory = [];
+            params.positionXHistory = [];
+            params.positionYHistory = [];
+            params.velocityXHistory = [];
+            params.velocityYHistory = [];
+            params.accelerationXHistory = [];
+            params.accelerationYHistory = [];
+        }
+        
+        // Slider event handlers
+        massSlider.addEventListener('input', () => {
+            params.mass = parseFloat(massSlider.value);
+            massValue.textContent = params.mass.toFixed(1);
+        });
+        
+        springSlider.addEventListener('input', () => {
+            params.springK = parseFloat(springSlider.value);
+            springValue.textContent = params.springK.toFixed(0);
+        });
+        
+        lengthSlider.addEventListener('input', () => {
+            params.restLength = parseFloat(lengthSlider.value);
+            lengthValue.textContent = params.restLength.toFixed(1);
+            if (params.paused) {
+                params.pendulumY = params.pivotY + params.restLength * params.pixelsPerMeter;
+                drawSimulation();
+            }
+        });
+        
+        gravitySlider.addEventListener('input', () => {
+            params.gravity = parseFloat(gravitySlider.value);
+            gravityValue.textContent = params.gravity.toFixed(1);
+        });
+        
+        // Button event handlers
+        resetBtn.addEventListener('click', () => {
+            initializePosition();
+            params.paused = true;
+            pauseBtn.textContent = 'Start';
+            drawSimulation();
+            drawDisplacementGraph();
+            drawVelocityGraph();
+            drawAccelerationGraph();
+        });
+        
+        pauseBtn.addEventListener('click', () => {
+            params.paused = !params.paused;
+            pauseBtn.textContent = params.paused ? 'Start' : 'Pause';
+            if (!params.paused) {
+                animate();
+            }
+        });
+        
+        // Mouse interaction
+        simulationCanvas.addEventListener('mousedown', (e) => {
+            const rect = simulationCanvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            
+            // Check if mouse is close to pendulum
+            const dx = mouseX - params.pendulumX;
+            const dy = mouseY - params.pendulumY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance < 20) {
+                params.dragging = true;
+                params.paused = true;
+                pauseBtn.textContent = 'Start';
+            }
+        });
+        
+        simulationCanvas.addEventListener('mousemove', (e) => {
+            if (!params.dragging) return;
+            
+            const rect = simulationCanvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            
+            // Update pendulum position
+            params.pendulumX = mouseX;
+            params.pendulumY = mouseY;
+            
+            // Reset velocity and acceleration when dragging
+            params.velocityX = 0;
+            params.velocityY = 0;
+            params.accelerationX = 0;
+            params.accelerationY = 0;
+            
+            // Clear history when dragging
+            params.timeElapsed = 0;
+            params.timeHistory = [];
+            params.positionXHistory = [];
+            params.positionYHistory = [];
+            params.velocityXHistory = [];
+            params.velocityYHistory = [];
+            params.accelerationXHistory = [];
+            params.accelerationYHistory = [];
+            
+            drawSimulation();
+            drawDisplacementGraph();
+            drawVelocityGraph();
+            drawAccelerationGraph();
+        });
+        
+        simulationCanvas.addEventListener('mouseup', () => {
+            if (params.dragging) {
+                params.dragging = false;
+                params.paused = false;
+                pauseBtn.textContent = 'Pause';
+                animate();
+            }
+        });
+        
+        simulationCanvas.addEventListener('mouseleave', () => {
+            if (params.dragging) {
+                params.dragging = false;
+            }
+        });
+        
+        // Touch support
+        simulationCanvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const rect = simulationCanvas.getBoundingClientRect();
+            const touchX = e.touches[0].clientX - rect.left;
+            const touchY = e.touches[0].clientY - rect.top;
+            
+            // Check if touch is close to pendulum
+            const dx = touchX - params.pendulumX;
+            const dy = touchY - params.pendulumY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance < 30) { // Larger touch target
+                params.dragging = true;
+                params.paused = true;
+                pauseBtn.textContent = 'Start';
+            }
+        });
+        
+        simulationCanvas.addEventListener('touchmove', (e) => {
+            if (!params.dragging) return;
+            e.preventDefault();
+            
+            const rect = simulationCanvas.getBoundingClientRect();
+            const touchX = e.touches[0].clientX - rect.left;
+            const touchY = e.touches[0].clientY - rect.top;
+            
+            // Update pendulum position
+            params.pendulumX = touchX;
+            params.pendulumY = touchY;
+            
+            // Reset velocity and acceleration when dragging
+            params.velocityX = 0;
+            params.velocityY = 0;
+            params.accelerationX = 0;
+            params.accelerationY = 0;
+            
+            // Clear history when dragging
+            params.timeElapsed = 0;
+            params.timeHistory = [];
+            params.positionXHistory = [];
+            params.positionYHistory = [];
+            params.velocityXHistory = [];
+            params.velocityYHistory = [];
+            params.accelerationXHistory = [];
+            params.accelerationYHistory = [];
+            
+            drawSimulation();
+            drawDisplacementGraph();
+            drawVelocityGraph();
+            drawAccelerationGraph();
+        });
+        
+        simulationCanvas.addEventListener('touchend', (e) => {
+            if (params.dragging) {
+                params.dragging = false;
+                params.paused = false;
+                pauseBtn.textContent = 'Pause';
+                animate();
+            }
+        });
+        
+        // Physics update function
+        function updatePhysics() {
+            if (params.paused) return;
+            
+            // Convert pixel coordinates to physics coordinates (meters)
+            const realX = (params.pendulumX - params.pivotX) / params.pixelsPerMeter;
+            const realY = (params.pendulumY - params.pivotY) / params.pixelsPerMeter;
+            
+            // Calculate the current length of the spring
+            const currentLength = Math.sqrt(realX * realX + realY * realY);
+            
+            // Calculate spring force (F = -k * (x - x0))
+            const springForce = params.springK * (params.restLength - currentLength);
+            
+            // Calculate force components
+            let forceX = 0;
+            let forceY = params.mass * params.gravity; // Gravity acts downward
+            
+            if (currentLength > 0) {
+                // Add spring force components
+                forceX += springForce * (realX / currentLength);
+                forceY += springForce * (realY / currentLength);
+            }
+            
+            // Calculate acceleration (F = ma => a = F/m)
+            params.accelerationX = forceX / params.mass;
+            params.accelerationY = forceY / params.mass;
+            
+            // Update velocity using Euler integration
+            params.velocityX += params.accelerationX * params.timeStep;
+            params.velocityY += params.accelerationY * params.timeStep;
+            
+            // Update position
+            params.pendulumX += params.velocityX * params.pixelsPerMeter * params.timeStep;
+            params.pendulumY += params.velocityY * params.pixelsPerMeter * params.timeStep;
+            
+            // Update time
+            params.timeElapsed += params.timeStep;
+            
+            // Store history data
+            params.timeHistory.push(params.timeElapsed);
+            params.positionXHistory.push(realX);
+            params.positionYHistory.push(realY);
+            params.velocityXHistory.push(params.velocityX);
+            params.velocityYHistory.push(params.velocityY);
+            params.accelerationXHistory.push(params.accelerationX);
+            params.accelerationYHistory.push(params.accelerationY);
+            
+            // Limit history to display only the last maxTime seconds
+            while (params.timeElapsed - params.timeHistory[0] > params.maxTime) {
+                params.timeHistory.shift();
+                params.positionXHistory.shift();
+                params.positionYHistory.shift();
+                params.velocityXHistory.shift();
+                params.velocityYHistory.shift();
+                params.accelerationXHistory.shift();
+                params.accelerationYHistory.shift();
+            }
+        }
+        
+        // Listen for window resize
+        window.addEventListener('resize', resizeCanvases);
+        
+        // Draw the simulation
+        function drawSimulation() {
+            simulationCtx.clearRect(0, 0, simulationCanvas.width, simulationCanvas.height);
+            
+            // Draw spring
+            simulationCtx.beginPath();
+            simulationCtx.moveTo(params.pivotX, params.pivotY);
+            
+            // Draw a spring-like line
+            const dx = params.pendulumX - params.pivotX;
+            const dy = params.pendulumY - params.pivotY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            const segments = 20;
+            const wiggleAmount = 10; // How much the spring wiggles
+            
+            // Calculate direction vector
+            const dirX = dx / distance;
+            const dirY = dy / distance;
+            
+            // Calculate perpendicular vector
+            const perpX = -dirY;
+            const perpY = dirX;
+            
+            // Draw wiggly line for spring
+            for (let i = 0; i <= segments; i++) {
+                const t = i / segments;
+                const wiggle = (i % 2 === 0) ? wiggleAmount : -wiggleAmount;
+                const x = params.pivotX + dx * t + perpX * wiggle * Math.sin(Math.PI * t);
+                const y = params.pivotY + dy * t + perpY * wiggle * Math.sin(Math.PI * t);
+                
+                if (i === 0) {
+                    simulationCtx.moveTo(x, y);
+                } else {
+                    simulationCtx.lineTo(x, y);
+                }
+            }
+            
+            simulationCtx.strokeStyle = '#666';
+            simulationCtx.lineWidth = 2;
+            simulationCtx.stroke();
+            
+            // Draw pivot point
+            simulationCtx.beginPath();
+            simulationCtx.arc(params.pivotX, params.pivotY, 6, 0, Math.PI * 2);
+            simulationCtx.fillStyle = '#333';
+            simulationCtx.fill();
+            
+            // Draw pendulum mass
+            simulationCtx.beginPath();
+            simulationCtx.arc(params.pendulumX, params.pendulumY, 15 + params.mass * 3, 0, Math.PI * 2);
+            simulationCtx.fillStyle = 'var(--primary-color)';
+            simulationCtx.fill();
+            simulationCtx.strokeStyle = '#333';
+            simulationCtx.lineWidth = 2;
+            simulationCtx.stroke();
+            
+            // Draw axes indicators
+            simulationCtx.beginPath();
+            simulationCtx.moveTo(params.pivotX, params.pivotY);
+            simulationCtx.lineTo(params.pivotX + 30, params.pivotY);
+            simulationCtx.strokeStyle = 'var(--x-color)';
+            simulationCtx.lineWidth = 2;
+            simulationCtx.stroke();
+            
+            simulationCtx.beginPath();
+            simulationCtx.moveTo(params.pivotX, params.pivotY);
+            simulationCtx.lineTo(params.pivotX, params.pivotY + 30);
+            simulationCtx.strokeStyle = 'var(--y-color)';
+            simulationCtx.lineWidth = 2;
+            simulationCtx.stroke();
+            
+            // Add axis labels
+            simulationCtx.font = '12px Arial';
+            simulationCtx.fillStyle = 'var(--x-color)';
+            simulationCtx.fillText('X', params.pivotX + 35, params.pivotY + 4);
+            
+            simulationCtx.fillStyle = 'var(--y-color)';
+            simulationCtx.fillText('Y', params.pivotX + 4, params.pivotY + 35);
+        }
+        
+        // Helper function for drawing all graphs with consistent style
+        function drawGraphBase(ctx, canvas, title, maxValue, minValue, unit) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            const padding = 30;
+            const graphWidth = canvas.width - 2 * padding;
+            const graphHeight = canvas.height - 2 * padding;
+            
+            // Draw axes
+            ctx.beginPath();
+            ctx.moveTo(padding, padding);
+            ctx.lineTo(padding, padding + graphHeight);
+            ctx.lineTo(padding + graphWidth, padding + graphHeight);
+            ctx.strokeStyle = '#666';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            // Draw axis labels
+            ctx.fillStyle = getComputedStyle(document.body).color;
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Time (s)', padding + graphWidth / 2, padding + graphHeight + 25);
+            
+            ctx.save();
+            ctx.translate(padding - 25, padding + graphHeight / 2);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillText(`${title} (${unit})`, 0, 0);
+            ctx.restore();
+            
+            // Draw horizontal zero line if range includes negative values
+            if (minValue < 0 && maxValue > 0) {
+                const zeroY = padding + graphHeight * (maxValue / (maxValue - minValue));
+                ctx.beginPath();
+                ctx.moveTo(padding, zeroY);
+                ctx.lineTo(padding + graphWidth, zeroY);
+                ctx.strokeStyle = '#999';
+                ctx.lineWidth = 1;
+                ctx.setLineDash([5, 5]);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+            
+            // Draw grid lines and labels
+            ctx.beginPath();
+            
+            // Time grid lines
+            const timeStep = Math.ceil(params.maxTime / 5);
+            for (let t = 0; t <= params.maxTime; t += timeStep) {
+                const x = padding + (t / params.maxTime) * graphWidth;
+                ctx.moveTo(x, padding + graphHeight);
+                ctx.lineTo(x, padding + graphHeight + 5);
+                ctx.fillText(t.toString(), x, padding + graphHeight + 15);
+            }
+            
+            // Value grid lines
+            const range = maxValue - minValue;
+            const valueStep = Math.ceil(range / 5);
+            
+            for (let v = Math.floor(minValue / valueStep) * valueStep; v <= maxValue; v += valueStep) {
+                if (v < minValue) continue;
+                
+                const normalizedValue = (v - minValue) / range;
+                const y = padding + graphHeight - (normalizedValue * graphHeight);
+                
+                ctx.moveTo(padding - 5, y);
+                ctx.lineTo(padding, y);
+                ctx.fillText(v.toFixed(1), padding - 15, y + 4);
+            }
+            
+            ctx.strokeStyle = '#CCC';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            
+            return { padding, graphWidth, graphHeight, minValue, maxValue, range };
+        }
+        
+        // Draw displacement-time graph
+        function drawDisplacementGraph() {
+            // Find max and min values for scaling
+            let maxDisplacement = 0.1; // Default minimum scale
+            let minDisplacement = -0.1;
+            
+            if (params.positionXHistory.length > 0) {
+                const xMax = Math.max(...params.positionXHistory);
+                const xMin = Math.min(...params.positionXHistory);
+                const yMax = Math.max(...params.positionYHistory);
+                const yMin = Math.min(...params.positionYHistory);
+                
+                maxDisplacement = Math.max(maxDisplacement, xMax, yMax);
+                minDisplacement = Math.min(minDisplacement, xMin, yMin);
+                
+                // Add a little padding
+                const range = maxDisplacement - minDisplacement;
+                maxDisplacement += range * 0.1;
+                minDisplacement -= range * 0.1;
+            }
+            
+            const graphInfo = drawGraphBase(
+                displacementCtx, 
+                displacementCanvas, 
+                'Displacement', 
+                maxDisplacement, 
+                minDisplacement, 
+                'm'
+            );
+            
+            // Draw X component
+            if (params.positionXHistory.length > 1) {
+                displacementCtx.beginPath();
+                
+                for (let i = 0; i < params.positionXHistory.length; i++) {
+                    const t = params.timeHistory[i];
+                    const x = params.positionXHistory[i];
+                    
+                    const canvasX = graphInfo.padding + ((t - (params.timeElapsed - params.maxTime)) / params.maxTime) * graphInfo.graphWidth;
+                    const normalizedValue = (x - graphInfo.minValue) / graphInfo.range;
+                    const canvasY = graphInfo.padding + graphInfo.graphHeight - (normalizedValue * graphInfo.graphHeight);
+                    
+                    if (i === 0) {
+                        displacementCtx.moveTo(canvasX, canvasY);
+                    } else {
+                        displacementCtx.lineTo(canvasX, canvasY);
+                    }
+                }
+                
+                displacementCtx.strokeStyle = 'var(--x-color)';
+                displacementCtx.lineWidth = 2;
+                displacementCtx.stroke();
+            }
+            
+            // Draw Y component
+            if (params.positionYHistory.length > 1) {
+                displacementCtx.beginPath();
+                
+                for (let i = 0; i < params.positionYHistory.length; i++) {
+                    const t = params.timeHistory[i];
+                    const y = params.positionYHistory[i];
+                    
+                    const canvasX = graphInfo.padding + ((t - (params.timeElapsed - params.maxTime)) / params.maxTime) * graphInfo.graphWidth;
+                    const normalizedValue = (y - graphInfo.minValue) / graphInfo.range;
+                    const canvasY = graphInfo.padding + graphInfo.graphHeight - (normalizedValue * graphInfo.graphHeight);
+                    
+                    if (i === 0) {
+                        displacementCtx.moveTo(canvasX, canvasY);
+                    } else {
+                        displacementCtx.lineTo(canvasX, canvasY);
+                    }
+                }
+                
+                displacementCtx.strokeStyle = 'var(--y-color)';
+                displacementCtx.lineWidth = 2;
+                displacementCtx.stroke();
+            }
+        }
+        
+        // Draw velocity-time graph
+        function drawVelocityGraph() {
+            // Find max and min values for scaling
+            let maxVelocity = 0.1; // Default minimum scale
+            let minVelocity = -0.1;
+            
+            if (params.velocityXHistory.length > 0) {
+                const xMax = Math.max(...params.velocityXHistory);
+                const xMin = Math.min(...params.velocityXHistory);
+                const yMax = Math.max(...params.velocityYHistory);
+                const yMin = Math.min(...params.velocityYHistory);
+                
+                maxVelocity = Math.max(maxVelocity, xMax, yMax);
+                minVelocity = Math.min(minVelocity, xMin, yMin);
+                
+                // Add a little padding
+                const range = maxVelocity - minVelocity;
+                maxVelocity += range * 0.1;
+                minVelocity -= range * 0.1;
+            }
+            
+            const graphInfo = drawGraphBase(
+                velocityCtx, 
+                velocityCanvas, 
+                'Velocity', 
+                maxVelocity, 
+                minVelocity, 
+                'm/s'
+            );
+            
+            // Draw X component
+            if (params.velocityXHistory.length > 1) {
+                velocityCtx.beginPath();
+                
+                for (let i = 0; i < params.velocityXHistory.length; i++) {
+                    const t = params.timeHistory[i];
+                    const vx = params.velocityXHistory[i];
+                    
+                    const canvasX = graphInfo.padding + ((t - (params.timeElapsed - params.maxTime)) / params.maxTime) * graphInfo.graphWidth;
+                    const normalizedValue = (vx - graphInfo.minValue) / graphInfo.range;
+                    const canvasY = graphInfo.padding + graphInfo.graphHeight - (normalizedValue * graphInfo.graphHeight);
+                    
+                    if (i === 0) {
+                        velocityCtx.moveTo(canvasX, canvasY);
+                    } else {
+                        velocityCtx.lineTo(canvasX, canvasY);
+                    }
+                }
+                
+                velocityCtx.strokeStyle = 'var(--x-color)';
+                velocityCtx.lineWidth = 2;
+                velocityCtx.stroke();
+            }
+            
+            // Draw Y component
+            if (params.velocityYHistory.length > 1) {
+                velocityCtx.beginPath();
+                
+                for (let i = 0; i < params.velocityYHistory.length; i++) {
+                    const t = params.timeHistory[i];
+                    const vy = params.velocityYHistory[i];
+                    
+                    const canvasX = graphInfo.padding + ((t - (params.timeElapsed - params.maxTime)) / params.maxTime) * graphInfo.graphWidth;
+                    const normalizedValue = (vy - graphInfo.minValue) / graphInfo.range;
+                    const canvasY = graphInfo.padding + graphInfo.graphHeight - (normalizedValue * graphInfo.graphHeight);
+                    
+                    if (i === 0) {
+                        velocityCtx.moveTo(canvasX, canvasY);
+                    } else {
+                        velocityCtx.lineTo(canvasX, canvasY);
+                    }
+                }
+                
+                velocityCtx.strokeStyle = 'var(--y-color)';
+                velocityCtx.lineWidth = 2;
+                velocityCtx.stroke();
+            }
+        }
+        
+        // Draw acceleration-time graph
+        function drawAccelerationGraph() {
+            // Find max and min values for scaling
+            let maxAcceleration = 0.1; // Default minimum scale
+            let minAcceleration = -0.1;
+            
+            if (params.accelerationXHistory.length > 0) {
+                const xMax = Math.max(...params.accelerationXHistory);
+                const xMin = Math.min(...params.accelerationXHistory);
+                const yMax = Math.max(...params.accelerationYHistory);
+                const yMin = Math.min(...params.accelerationYHistory);
+                
+                maxAcceleration = Math.max(maxAcceleration, xMax, yMax);
+                minAcceleration = Math.min(minAcceleration, xMin, yMin);
+                
+                // Add a little padding
+                const range = maxAcceleration - minAcceleration;
+                maxAcceleration += range * 0.1;
+                minAcceleration -= range * 0.1;
+            }
+            
+            const graphInfo = drawGraphBase(
+                accelerationCtx, 
+                accelerationCanvas, 
+                'Acceleration', 
+                maxAcceleration, 
+                minAcceleration, 
+                'm/s²'
+            );
+            
+            // Draw X component
+            if (params.accelerationXHistory.length > 1) {
+                accelerationCtx.beginPath();
+                
+                for (let i = 0; i < params.accelerationXHistory.length; i++) {
+                    const t = params.timeHistory[i];
+                    const ax = params.accelerationXHistory[i];
+                    
+                    const canvasX = graphInfo.padding + ((t - (params.timeElapsed - params.maxTime)) / params.maxTime) * graphInfo.graphWidth;
+                    const normalizedValue = (ax - graphInfo.minValue) / graphInfo.range;
+                    const canvasY = graphInfo.padding + graphInfo.graphHeight - (normalizedValue * graphInfo.graphHeight);
+                    
+                    if (i === 0) {
+                        accelerationCtx.moveTo(canvasX, canvasY);
+                    } else {
+                        accelerationCtx.lineTo(canvasX, canvasY);
+                    }
+                }
+                
+                accelerationCtx.strokeStyle = 'var(--x-color)';
+                accelerationCtx.lineWidth = 2;
+                accelerationCtx.stroke();
+            }
+            
+            // Draw Y component
+            if (params.accelerationYHistory.length > 1) {
+                accelerationCtx.beginPath();
+                
+                for (let i = 0; i < params.accelerationYHistory.length; i++) {
+                    const t = params.timeHistory[i];
+                    const ay = params.accelerationYHistory[i];
+                    
+                    const canvasX = graphInfo.padding + ((t - (params.timeElapsed - params.maxTime)) / params.maxTime) * graphInfo.graphWidth;
+                    const normalizedValue = (ay - graphInfo.minValue) / graphInfo.range;
+                    const canvasY = graphInfo.padding + graphInfo.graphHeight - (normalizedValue * graphInfo.graphHeight);
+                    
+                    if (i === 0) {
+                        accelerationCtx.moveTo(canvasX, canvasY);
+                    } else {
+                        accelerationCtx.lineTo(canvasX, canvasY);
+                    }
+                }
+                
+                accelerationCtx.strokeStyle = 'var(--y-color)';
+                accelerationCtx.lineWidth = 2;
+                accelerationCtx.stroke();
+            }
+        }
+        
+        // Animation loop
+        function animate() {
+            if (params.paused) return;
+            
+            updatePhysics();
+            drawSimulation();
+            drawDisplacementGraph();
+            drawVelocityGraph();
+            drawAccelerationGraph();
+            
+            requestAnimationFrame(animate);
+        }
+        
+        // Initialize
+        resizeCanvases();
+        initializePosition();
+        drawSimulation();
+        drawDisplacementGraph();
+        drawVelocityGraph();
+        drawAccelerationGraph();
+    </script>
+</body>
+</html>
