@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ripple Tank Sim (Step 3: Optional Amplitude Coloring)</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #f0f0f0; font-family: Arial, sans-serif; }
+        canvas { display: block; width: 100%; height: 100vh; }
+        #info {
+            position: absolute;
+            top: 10px;
+            width: 100%;
+            text-align: center;
+            color: #333;
+            font-size: 14px;
+            z-index: 1;
+            pointer-events: none;
+        }
+        .controls {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background-color: rgba(255, 255, 255, 0.7);
+            padding: 10px;
+            border-radius: 5px;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: flex-start;
+        }
+        .slider-group {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 0px;
+            width: 200px;
+        }
+        .slider-group label {
+            margin-bottom: 3px;
+            color: #555;
+            font-size: 0.9em;
+        }
+        .slider-group input[type="range"] {
+            width: 100%;
+            -webkit-appearance: none;
+            appearance: none;
+            background: #ddd;
+            border-radius: 5px;
+            height: 6px;
+            outline: none;
+        }
+        .slider-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #0078d7;
+            cursor: pointer;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+        .slider-group input[type="range"]::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #0078d7;
+            cursor: pointer;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+            border: none;
+        }
+        .slider-group input[type="range"]::-webkit-slider-thumb:hover,
+        .slider-group input[type="range"]::-moz-range-thumb:hover {
+            background: #005a9e;
+        }
+        .slider-group input[type="range"]:focus {
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.3);
+            outline: none;
+        }
+        #sourceSeparationSliderGroup {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 0px;
+            width: 200px;
+        }
+        #sourceSeparationSliderGroup label {
+            margin-bottom: 3px;
+            color: #555;
+            font-size: 0.9em;
+        }
+        #sourceSeparationSliderGroup input[type="range"] {
+            width: 100%;
+            -webkit-appearance: none;
+            appearance: none;
+            background: #ddd;
+            border-radius: 5px;
+            height: 6px;
+            outline: none;
+        }
+        #sourceSeparationSliderGroup input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #0078d7;
+            cursor: pointer;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+        #sourceSeparationSliderGroup input[type="range"]::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #0078d7;
+            cursor: pointer;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+            border: none;
+        }
+        #sourceSeparationSliderGroup input[type="range"]::-webkit-slider-thumb:hover,
+        #sourceSeparationSliderGroup input[type="range"]::-moz-range-thumb:hover {
+            background: #005a9e;
+        }
+        #sourceSeparationSliderGroup input[type="range"]:focus {
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.3);
+            outline: none;
+        }
+        #colorCodeToggle {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+        }
+        #colorCodeToggle input[type="checkbox"] {
+            margin-right: 5px;
+        }
+        #particleTrackingToggle {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+        }
+        #particleTrackingToggle input[type="checkbox"] {
+            margin-right: 5px;
+        }
+        #graphCanvas {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: rgba(255, 255, 255, 0.7);
+            border-radius: 5px;
+            z-index: 1;
+            width: 300px;
+            height: 200px;
+            border: 1px solid #ccc;
+        }
+        #particleMarker {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: black;
+            cursor: pointer;
+            z-index: 2;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="info">Ripple Tank Simulation: Step 3 - Optional Amplitude Coloring</div>
+    <div class="controls">
+        <div class="slider-group">
+            <label for="frequency">Frequency (Hz)</label>
+            <input type="range" id="frequency" min="0.1" max="5" step="0.1" value="0.5">
+            <span id="frequencyValue">0.5 Hz</span>
+        </div>
+        <div class="slider-group">
+            <label for="wavelength">Wavelength (m)</label>
+            <input type="range" id="wavelength" min="5" max="30" step="1" value="15">
+            <span id="wavelengthValue">15 m</span>
+        </div>
+        <div class="slider-group">
+            <label for="amplitude">Amplitude (m)</label>
+            <input type="range" id="amplitude" min="0.1" max="2" step="0.05" value="0.5">
+            <span id="amplitudeValue">0.5 m</span>
+        </div>
+        <div id="sourceSeparationSliderGroup">
+            <label for="sourceSeparation">Source Separation (m)</label>
+            <input type="range" id="sourceSeparation" min="10" max="80" step="1" value="30">
+            <span id="sourceSeparationValue">30 m</span>
+        </div>
+        <div id="colorCodeToggle">
+            <label for="showColorCode">Show Color Code</label>
+            <input type="checkbox" id="showColorCode" checked>
+        </div>
+        <div id="particleTrackingToggle">
+            <label for="enableParticleTracking">Enable Particle Tracking</label>
+            <input type="checkbox" id="enableParticleTracking">
+        </div>
+    </div>
+    <canvas id="rippleCanvas"></canvas>
+    <canvas id="graphCanvas"></canvas>
+    <div id="particleMarker"></div>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.163.0/build/three.module.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.163.0/examples/jsm/"
+            }
+        }
+    </script>
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        let scene, camera, renderer, controls;
+        let planeMesh, clock;
+        let originalPositions;
+        let canvas;
+
+        // --- Simulation Parameters ---
+        let planeWidth = 100;
+        let planeHeight = 100;
+        let planeSegmentsW = 100;
+        let planeSegmentsH = 100;
+
+        let amplitude = 0.5;
+        let wavelength = 15;
+        let frequency = 0.5;
+        let sourceSeparation = 30;
+        let sourceX1 = -sourceSeparation / 2;
+        let sourceZ1 = 0;
+        let sourceX2 = sourceSeparation / 2;
+        let sourceZ2 = 0;
+
+        let k = (2 * Math.PI) / wavelength;
+        let omega = (2 * Math.PI) * frequency;
+
+        // --- Get handles to the input elements ---
+        const frequencySlider = document.getElementById('frequency');
+        const wavelengthSlider = document.getElementById('wavelength');
+        const amplitudeSlider = document.getElementById('amplitude');
+        const frequencyValueDisplay = document.getElementById('frequencyValue');
+        const wavelengthValueDisplay = document.getElementById('wavelengthValue');
+        const amplitudeValueDisplay = document.getElementById('amplitudeValue');
+        const sourceSeparationSlider = document.getElementById('sourceSeparation');
+        const sourceSeparationValueDisplay = document.getElementById('sourceSeparationValue');
+        const showColorCodeCheckbox = document.getElementById('showColorCode');
+        const enableParticleTrackingCheckbox = document.getElementById('enableParticleTracking');
+
+        let showColorCode = true; // Default value
+        let enableParticleTracking = false;
+        let particlePosition = { x: 0, z: 0 };
+        let displacementData = [];
+        let maxDataPoints = 100;
+
+        let graphCanvas = document.getElementById('graphCanvas');
+        let graphCtx = graphCanvas.getContext('2d');
+        let particleMarker = document.getElementById('particleMarker');
+        let isDragging = false;
+        let previousMousePosition = { x: 0, y: 0 };
+
+        // --- Graph Fixed Scaling ---
+        const graphMaxDisplacement = 4.0;  // Fixed max displacement for the graph
+        const graphMinDisplacement = -4.0; // Fixed min displacement for the graph
+
+
+        function init() {
+            // --- Basic Scene Setup ---
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xeeeeee);
+            clock = new THREE.Clock();
+
+            // --- Camera ---
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(30, 40, 50);
+            camera.lookAt(0, 0, 0);
+
+            // --- Renderer ---
+            canvas = document.getElementById('rippleCanvas');
+            renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+
+            // --- Lighting ---
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(50, 50, 50);
+            scene.add(directionalLight);
+
+            // --- Water Surface (Plane) ---
+            const geometry = new THREE.PlaneGeometry(planeWidth, planeHeight, planeSegmentsW, planeSegmentsH);
+            geometry.rotateX(-Math.PI / 2);
+
+            originalPositions = geometry.attributes.position.clone();
+
+            const colors = new Float32Array(geometry.attributes.position.count * 3);
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+            const material = new THREE.MeshPhongMaterial({
+                vertexColors: true,
+                side: THREE.DoubleSide,
+                shininess: 50,
+                wireframe: false
+            });
+
+            planeMesh = new THREE.Mesh(geometry, material);
+            scene.add(planeMesh);
+
+            // --- Source Markers ---
+            const sourceGeometry = new THREE.SphereGeometry(0.8, 16, 8);
+            const sourceMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+            const sourceMarker1 = new THREE.Mesh(sourceGeometry, sourceMaterial);
+            sourceMarker1.position.set(sourceX1, amplitude + 0.5, sourceZ1);
+            scene.add(sourceMarker1);
+
+            const sourceMarker2 = new THREE.Mesh(sourceGeometry, sourceMaterial);
+            sourceMarker2.position.set(sourceX2, amplitude + 0.5, sourceZ2);
+            scene.add(sourceMarker2);
+
+            // --- Controls ---
+            controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.screenSpacePanning = false;
+            controls.maxPolarAngle = Math.PI / 2 - 0.05;
+            controls.minDistance = 10;
+            controls.maxDistance = 200;
+
+            // --- Event Listeners ---
+            window.addEventListener('resize', onWindowResize, false);
+            // --- Slider Listeners ---
+            frequencySlider.addEventListener('input', () => {
+                frequency = parseFloat(frequencySlider.value);
+                omega = 2 * Math.PI * frequency;
+                frequencyValueDisplay.textContent = frequency.toFixed(1) + " Hz";
+            });
+
+            wavelengthSlider.addEventListener('input', () => {
+                wavelength = parseFloat(wavelengthSlider.value);
+                k = (2 * Math.PI) / wavelength;
+                wavelengthValueDisplay.textContent = wavelength.toFixed(1) + " m";
+            });
+
+            amplitudeSlider.addEventListener('input', () => {
+                amplitude = parseFloat(amplitudeSlider.value);
+                amplitudeValueDisplay.textContent = amplitude.toFixed(1) + " m";
+            });
+
+            sourceSeparationSlider.addEventListener('input', () => {
+                sourceSeparation = parseFloat(sourceSeparationSlider.value);
+                sourceX1 = -sourceSeparation / 2;
+                sourceX2 = sourceSeparation / 2;
+                sourceMarker1.position.set(sourceX1, amplitude + 0.5, sourceZ1);
+                sourceMarker2.position.set(sourceX2, amplitude + 0.5, sourceZ2);
+                sourceSeparationValueDisplay.textContent = sourceSeparation.toFixed(1) + " m";
+            });
+
+            showColorCodeCheckbox.addEventListener('change', () => {
+                showColorCode = showColorCodeCheckbox.checked;
+            });
+
+            enableParticleTrackingCheckbox.addEventListener('change', () => {
+                enableParticleTracking = enableParticleTrackingCheckbox.checked;
+                if (enableParticleTracking) {
+                    particleMarker.style.display = 'block';
+                    //Find the plane position.
+                    const planeWorldPosition = new THREE.Vector3();
+                    planeMesh.getWorldPosition(planeWorldPosition);
+
+                    // Set the particle marker's initial position.
+                    particleMarker.style.left = `${window.innerWidth / 2 - 5}px`;
+                    particleMarker.style.top = `${window.innerHeight / 2 - 5}px`;
+                    particlePosition.x = 0;
+                    particlePosition.z = 0;
+
+                } else {
+                    particleMarker.style.display = 'none';
+                    displacementData = [];
+                    drawDisplacementGraph();
+                }
+            });
+
+            particleMarker.addEventListener('mousedown', (event) => {
+                isDragging = true;
+                previousMousePosition = {
+                    x: event.clientX,
+                    y: event.clientY,
+                };
+                controls.enabled = false;
+            });
+
+            window.addEventListener('mousemove', (event) => {
+                if (isDragging) {
+                    const deltaX = event.clientX - previousMousePosition.x;
+                    const deltaY = event.clientY - previousMousePosition.y;
+
+                    // Convert pixel movement to world coordinates (approximation)
+                    const worldMovementX = (deltaX / window.innerWidth) * planeWidth;
+                    const worldMovementZ = (deltaY / window.innerHeight) * planeHeight;
+
+                    particlePosition.x += worldMovementX;
+                    particlePosition.z -= worldMovementZ; // Y-axis is inverted in screen coordinates
+
+                    // Clamp the particle position within the plane bounds
+                    particlePosition.x = Math.max(-planeWidth / 2, Math.min(planeWidth / 2, particlePosition.x));
+                    particlePosition.z = Math.max(-planeHeight / 2, Math.min(planeHeight / 2, particlePosition.z));
+
+
+                    particleMarker.style.left = `${event.clientX - 5}px`;
+                    particleMarker.style.top = `${event.clientY - 5}px`;
+
+                    previousMousePosition = {
+                        x: event.clientX,
+                        y: event.clientY,
+                    };
+                }
+            });
+
+            window.addEventListener('mouseup', () => {
+                isDragging = false;
+                controls.enabled = true;
+            });
+            window.addEventListener('mouseleave', () => {
+                isDragging = false;
+                controls.enabled = true;
+            });
+
+            animate();
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function updateParticlePosition(time) {
+            if (!enableParticleTracking) return 0;
+
+            const positionAttribute = planeMesh.geometry.attributes.position;
+            const vertexCount = positionAttribute.count;
+            let closestVertexIndex = 0;
+            let minDistance = Infinity;
+
+            // Find the closest vertex on the plane to the particle's x, z coordinates
+            for (let i = 0; i < vertexCount; i++) {
+                const vx = originalPositions.getX(i);
+                const vz = originalPositions.getZ(i);
+                const distance = Math.sqrt(Math.pow(vx - particlePosition.x, 2) + Math.pow(vz - particlePosition.z, 2));
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    closestVertexIndex = i;
+                }
+            }
+
+            // Get the y displacement of the closest vertex
+            const displacement = positionAttribute.getY(closestVertexIndex);
+            return displacement;
+        }
+
+        function updateDisplacementData(time) {
+            if (!enableParticleTracking) return;
+
+            const displacement = updateParticlePosition(time);
+            displacementData.push({ time: time, displacement: displacement });
+            if (displacementData.length > maxDataPoints) {
+                displacementData.shift();
+            }
+        }
+
+        function drawDisplacementGraph() {
+            if (!enableParticleTracking) {
+                graphCtx.clearRect(0, 0, graphCanvas.width, graphCanvas.height);
+                return;
+            }
+
+            graphCtx.clearRect(0, 0, graphCanvas.width, graphCanvas.height);
+            graphCtx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+            graphCtx.fillRect(0, 0, graphCanvas.width, graphCanvas.height);
+
+            if (displacementData.length === 0) return;
+
+            // Use the fixed displacement range
+            const maxDisplacement = graphMaxDisplacement;
+            const minDisplacement = graphMinDisplacement;
+            const displacementRange = maxDisplacement - minDisplacement;
+
+
+            const xScaling = graphCanvas.width / (displacementData.length - 1);
+            const yScaling = graphCanvas.height / (maxDisplacement - minDisplacement);
+            const equilibriumY = graphCanvas.height - (0 - minDisplacement) * yScaling; //y position of the equilibrium line.
+
+            graphCtx.beginPath();
+            graphCtx.strokeStyle = 'black';
+            graphCtx.lineWidth = 2;
+
+            for (let i = 0; i < displacementData.length; i++) {
+                const x = i * xScaling;
+                const y = graphCanvas.height - (displacementData[i].displacement - minDisplacement) * yScaling;
+
+                if (i === 0) {
+                    graphCtx.moveTo(x, y);
+                } else {
+                    graphCtx.lineTo(x, y);
+                }
+            }
+            graphCtx.stroke();
+
+            // Draw the equilibrium line
+            graphCtx.strokeStyle = 'grey';  // Changed to grey
+            graphCtx.beginPath();
+            graphCtx.moveTo(0, equilibriumY);
+            graphCtx.lineTo(graphCanvas.width, equilibriumY);
+            graphCtx.stroke();
+
+            // Draw the axes
+            graphCtx.strokeStyle = '#ccc';
+            graphCtx.beginPath();
+            graphCtx.moveTo(0, 0);
+            graphCtx.lineTo(0, graphCanvas.height);
+            graphCtx.lineTo(graphCanvas.width, graphCanvas.height);
+            graphCtx.stroke();
+
+            // Add axis labels
+            graphCtx.fillStyle = '#666';
+            graphCtx.font = '12px Arial';
+            graphCtx.fillText('Time', graphCanvas.width - 30, graphCanvas.height - 5);
+            graphCtx.fillText('Displacement', 5, 10);
+
+            //Draw the y axis scale.
+            graphCtx.font = '10px Arial';
+            graphCtx.fillStyle = 'black';
+            const numberOfTicks = 4; //number of ticks on the y axis, changed from 5 to 4.
+            for (let i = 0; i <= numberOfTicks; i++) {
+                const y = graphCanvas.height - (i * (graphCanvas.height / numberOfTicks));
+                const displacementValue = maxDisplacement - (i * (displacementRange / numberOfTicks)); //changed the calculation.
+                graphCtx.fillText(displacementValue.toFixed(1) + " m", 5, y);
+            }
+        }
+
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const time = clock.getElapsedTime();
+            const positionAttribute = planeMesh.geometry.attributes.position;
+            const colorAttribute = planeMesh.geometry.attributes.color;
+            const vertexCount = positionAttribute.count;
+
+            for (let i = 0; i < vertexCount; i++) {
+                const vx = originalPositions.getX(i);
+                const vz = originalPositions.getZ(i);
+
+                // Calculate distance from each source
+                const dx1 = vx - sourceX1;
+                const dz1 = vz - sourceZ1;
+                const r1 = Math.sqrt(dx1 * dx1 + dz1 * dz1);
+
+                const dx2 = vx - sourceX2;
+                const dz2 = vz - sourceZ2;
+                const r2 = Math.sqrt(dx2 * dx2 + dz2 * dz2);
+
+                // Calculate wave height from each source and sum them
+                const y1 = amplitude * Math.sin(k * r1 - omega * time);
+                const y2 = amplitude * Math.sin(k * r2 - omega * time);
+                const y = y1 + y2;
+
+                positionAttribute.setY(i, y);
+
+                if (showColorCode) {
+                    const normalizedHeight = (y / (2 * amplitude) + 1) / 2;
+                    const hue = (1.0 - normalizedHeight) * 0.66;
+                    const saturation = 1.0;
+                    const lightness = 0.5;
+                    const color = new THREE.Color();
+                    color.setHSL(hue, saturation, lightness);
+                    colorAttribute.setXYZ(i, color.r, color.g, color.b);
+                } else {
+                    // If color coding is disabled, use a default color (e.g., light blue)
+                    const color = new THREE.Color(0xadd8e6); // Light blue
+                    colorAttribute.setXYZ(i, color.r, color.g, color.b);
+                }
+            }
+
+            positionAttribute.needsUpdate = true;
+            colorAttribute.needsUpdate = true;
+            planeMesh.geometry.computeVertexNormals();
+            controls.update();
+            renderer.render(scene, camera);
+
+            updateDisplacementData(time);
+            drawDisplacementGraph();
+        }
+
+        init();
+
+    </script>
+</body>
+</html>
